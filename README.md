@@ -3,8 +3,12 @@ DNSctl
 
 Tool made to ease and simplify DNS records updates from the cli.
 
-TODO:
+* Working features:
+  * Loads configuration file
+  * Creates configuration file structure
+  * Lists all the records from configured Cloudflare providers
 
+TODO (Everything):
 * Add records.
 * Copy between providers.
   * Exclude non-standard records (Alias, etc)
@@ -36,7 +40,7 @@ Will compile plugins folder only.
 `make install`
 Will run `make all` and then will put the dnsctl binary at `/usr/local/bin` and the plugins at `/usr/local/lib/dnsctl` if root is used; for local installs the setup will use `$HOME/.conf/dnsctl` and `$GOPATH/bin` will be used.
 
-Usage
+Usage Goal
 -----
 Each plugin defines the criteria for different DNS providers. Current development is for CloudFlare, GCP and AWS
 
