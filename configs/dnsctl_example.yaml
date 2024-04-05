@@ -1,0 +1,21 @@
+application:
+  - name: dnsctl
+    path:
+      plugins: build/plugins/cloudflare_dns.so
+
+provider:
+  - name: Providername
+    domain:
+      - example.com.mx
+      - example.org
+      - example.com
+    credentials:
+      key: keysldkjasdklaj
+      email: user@email.com
+  - name: Secondname
+    domain:
+      - example.com.mx
+      - example.org
+      - example.com
+    credentials.key: sdfsdfsdfassdf
+    credentials.email: user2@email.com
