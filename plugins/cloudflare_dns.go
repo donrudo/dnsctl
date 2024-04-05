@@ -4,74 +4,94 @@ import (
 	"context"
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/donrudo/dnsctl/api"
+	"github.com/donrudo/dnsctl/pkg"
 	"log"
-	"os"
 )
+
+var Version string
+var PluginLoaded cloudflareProvider
 
 type cloudflareProvider struct {
 	api.ProviderPlugin
 	ctx        context.Context
 	connection *cloudflare.API
-	Provider   *api.Provider
+	Provider   api.SettingsProvider
+}
+
+func (t *cloudflareProvider) GetVersion() string {
+	return Version
 }
 
 func (t *cloudflareProvider) GetPluginType() api.PluginType {
 	return api.PT_Provider
 }
-func (t *cloudflareProvider) GetProvider() *api.Provider {
+
+func (t *cloudflareProvider) GetProvider() api.SettingsProvider {
 	return t.Provider
 }
+
 func (t *cloudflareProvider) ListRecords() ([]api.Record, error) {
 	// Fetch the zone ID
-	id, err := t.connection.ZoneIDByName(t.Provider.Domain)
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
+	var allRecords []api.Record
+	for _, v := range t.Provider.Domain {
+		id, err := t.connection.ZoneIDByName(v)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+
+		cfRecords, resultInfo, err := t.connection.ListDNSRecords(t.ctx,
+			cloudflare.ZoneIdentifier(id),
+			cloudflare.ListDNSRecordsParams{})
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+
+		t.ctx = context.Background()
+		log.Println(resultInfo)
+
+		for _, cfr := range cfRecords {
+
+			allRecords = append(allRecords,
+				api.Record{
+					Name:     cfr.Name,
+					TTL:      cfr.TTL,
+					Value:    cfr.Content,
+					Type:     cfr.Type,
+					Provider: t.GetProvider().Name,
+				})
+		}
 	}
-
-	cfRecords, resultInfo, err := t.connection.ListDNSRecords(t.ctx,
-		cloudflare.ZoneIdentifier(id),
-		cloudflare.ListDNSRecordsParams{})
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	t.ctx = context.Background()
-	log.Println(resultInfo)
-
-	var all_records []api.Record
-	for _, cfr := range cfRecords {
-
-		all_records = append(all_records,
-			api.Record{
-				cfr.Name,
-				cfr.TTL,
-				cfr.Content,
-				cfr.Type,
-				t.GetProvider().Name,
-			})
-
-	}
-
-	return all_records, nil
+	return allRecords, nil
 }
 
-func (t *cloudflareProvider) Init(ctx context.Context) error {
+/*
+	 cloudflareProvider Init, initializes plugin from configuration file
+	    1. Load Configuration file.
+	 	1.1 Search at config for API based on domain name.
+		Stores basic settings for the applications, discards key and email after loading API
+*/
+func (t *cloudflareProvider) Init(ctx context.Context, configFile string) error {
 
-	//TODO: Load credentials, provider name and domain from configuration file before pushing
-	t.Provider.Name = "Cloudflare"
-	t.Provider.Domain = "example.com"
+	ProviderCfg, err := pkg.LoadConfiguration(configFile, "Cloudflare")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Provider = api.SettingsProvider{
+		ProviderCfg.(api.ProviderCfg).Name,
+		ProviderCfg.(api.ProviderCfg).Domain,
+	}
+
 	t.ctx = ctx
-	var err error
-	if t.connection, err = cloudflare.New(os.Getenv("CF_API_KEY"), os.Getenv("CF_API_EMAIL")); err != nil {
+	if t.connection, err = cloudflare.New(ProviderCfg.(api.ProviderCfg).Key, ProviderCfg.(api.ProviderCfg).Email); err != nil {
 		return err
 	}
 	t.ctx = context.Background()
+
 	// Most API calls require a Context
 	return nil
 }
-
-var PluginLoaded cloudflareProvider
 
 // Useful for test snippets
 //func main() {
