@@ -2,7 +2,7 @@
 **/.terraform/*
 build/
 .idea/
-
+configs/
 # .tfstate files
 *.tfstate
 *.tfstate.*
