@@ -23,13 +23,65 @@ func (t *cloudflareProvider) GetVersion() string {
 }
 
 func (t *cloudflareProvider) GetPluginType() api.PluginType {
-	return api.PT_Provider
+	return api.PtProvider
 }
 
 func (t *cloudflareProvider) GetProvider() api.SettingsProvider {
 	return t.Provider
 }
 
+func (t *cloudflareProvider) GetName() string {
+	return t.Provider.Name
+}
+
+/*
+ListRecordsFromDomain from all the configured domains for Cloudflare.
+
+	Returns: []api.Record with all the records found per domain.
+	err is returned if the ID for a domain cannot be found or if records for at least one domain cannot be requested.
+*/
+func (t *cloudflareProvider) ListRecordsFromDomain(domain string) ([]api.Record, error) {
+	// Fetch the zone ID
+	var allRecords []api.Record
+	id, err := t.connection.ZoneIDByName(domain)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	cfRecords, resultInfo, err := t.connection.ListDNSRecords(t.ctx,
+		cloudflare.ZoneIdentifier(id),
+		cloudflare.ListDNSRecordsParams{})
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	t.ctx = context.Background()
+	log.Println(resultInfo)
+
+	for _, cfr := range cfRecords {
+
+		allRecords = append(allRecords,
+			api.Record{
+				Name:     cfr.Name,
+				TTL:      cfr.TTL,
+				Value:    cfr.Content,
+				Type:     cfr.Type,
+				Provider: t.GetProvider().Name,
+			})
+
+	}
+
+	return allRecords, nil
+}
+
+/*
+ListRecords from all the configured domains for Cloudflare.
+
+	Returns: []api.Record with all the records found per domain.
+	err is returned if the ID for a domain cannot be found or if records for at least one domain cannot be requested.
+*/
 func (t *cloudflareProvider) ListRecords() ([]api.Record, error) {
 	// Fetch the zone ID
 	var allRecords []api.Record
@@ -65,6 +117,13 @@ func (t *cloudflareProvider) ListRecords() ([]api.Record, error) {
 	}
 	return allRecords, nil
 }
+func (t *cloudflareProvider) Init(ctx context.Context, configFile string) (api.ProviderPlugin, error) {
+
+	cloudflarePlugin, err := t.InitCloudflare(ctx, configFile)
+
+	return &cloudflarePlugin, err
+
+}
 
 /*
 	 cloudflareProvider Init, initializes plugin from configuration file
@@ -72,11 +131,12 @@ func (t *cloudflareProvider) ListRecords() ([]api.Record, error) {
 	 	1.1 Search at config for API based on domain name.
 		Stores basic settings for the applications, discards key and email after loading API
 */
-func (t *cloudflareProvider) Init(ctx context.Context, configFile string) error {
+func (t *cloudflareProvider) InitCloudflare(ctx context.Context, configFile string) (cloudflareProvider, error) {
 
 	ProviderCfg, err := pkg.LoadConfiguration(configFile, "Cloudflare")
 	if err != nil {
 		log.Fatal(err)
+		return *t, err
 	}
 	t.Provider = api.SettingsProvider{
 		ProviderCfg.(api.ProviderCfg).Name,
@@ -85,12 +145,12 @@ func (t *cloudflareProvider) Init(ctx context.Context, configFile string) error 
 
 	t.ctx = ctx
 	if t.connection, err = cloudflare.New(ProviderCfg.(api.ProviderCfg).Key, ProviderCfg.(api.ProviderCfg).Email); err != nil {
-		return err
+		return *t, err
 	}
 	t.ctx = context.Background()
 
 	// Most API calls require a Context
-	return nil
+	return *t, nil
 }
 
 // Useful for test snippets
