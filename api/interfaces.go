@@ -5,33 +5,35 @@ import "context"
 type PluginType int8
 
 const (
-	PT_NoPlugin PluginType = iota
-	PT_Exporter
-	PT_Provider
+	PtNoPlugin PluginType = iota
+	PtOutput
+	PtProvider
 )
 
 const (
-	PE_Exporter = ".*exp.so"
-	PE_Provider = ".*dns.so"
+	PeOutput   = "/*out.so"
+	PeProvider = "/*dns.so"
 )
 
 type GenericPlugin interface {
 	GetPluginType() PluginType
 	GetVersion() string
+	GetName() string
 }
 
 type ProviderPlugin interface {
 	GenericPlugin
 	ListRecords() ([]Record, error)
+	ListRecordsFromDomain(domain string) ([]Record, error)
 	GetProvider() SettingsProvider
-	Init(context.Context, string) error
+	Init(context.Context, string) (ProviderPlugin, error)
 }
 
-type ExporterPlugin interface {
+type OutputPlugin interface {
 	GenericPlugin
-	ListRecords() []Record
-	GetProvider() *SettingsProvider
-	Init(context.Context, string) error
+	PrintRecord(r Record) error
+	PrintProvider(p SettingsProvider) error
+	Init(context.Context, string) (OutputPlugin, error)
 }
 
 type Record struct {
