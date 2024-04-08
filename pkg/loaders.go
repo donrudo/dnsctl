@@ -10,10 +10,22 @@ import (
 	"strings"
 )
 
+// FindPlugins uses PeProvider and PeOutput filters to search at path for matching plugins.
+
 func FindPlugins(path string) ([]string, error) {
 
-	return filepath.Glob(path + "/*_dns.so")
+	plProviders, err := filepath.Glob(path + api.PeProvider)
+	if err != nil {
+		return plProviders, err
+	}
+	plOutput, err := filepath.Glob(path + api.PeOutput)
+	if err != nil {
+		return plOutput, err
+	}
 
+	result := append(plProviders, plOutput...)
+	log.Printf("Found %d plugin files.", len(result))
+	return result, nil
 }
 
 func LoadPlugin(path string) (interface{}, api.PluginType) {
@@ -23,13 +35,13 @@ func LoadPlugin(path string) (interface{}, api.PluginType) {
 	pt, err := test.Lookup("PluginLoaded")
 	if err != nil {
 		log.Panic(err)
-		return nil, api.PT_NoPlugin
+		return nil, api.PtNoPlugin
 	}
 
 	genericHelper, ok := pt.(interface{})
 	if !ok {
 		log.Panic("Unknown error after loading plugin:", pt)
-		return nil, api.PT_NoPlugin
+		return nil, api.PtNoPlugin
 	}
 
 	return genericHelper, genericHelper.(api.GenericPlugin).GetPluginType()
