@@ -6,6 +6,7 @@ Tool made to ease and simplify DNS records updates from the cli.
 * Working features:
   * Loads configuration file
   * Creates configuration file structure
+  * Very basic Cloudflare and Stdout plugins.
   * Lists all the records from configured Cloudflare providers
 
 TODO (Everything):
@@ -15,7 +16,7 @@ TODO (Everything):
 * Delete Records.
 * Export to json.
 * Export to Terraform.
-* Add support for different providers.
+* Add support for different providers (AWS and GCP coming up)
 
 
 Compile
@@ -38,7 +39,7 @@ cleans up build and bin directories.
 Will compile plugins folder only.
 
 `make install`
-Will run `make all` and then will put the dnsctl binary at `/usr/local/bin` and the plugins at `/usr/local/lib/dnsctl` if root is used; for local installs the setup will use `$HOME/.conf/dnsctl` and `$GOPATH/bin` will be used.
+*DONT DO THIS, NOT READY* Will run `make all` and then will put the dnsctl binary at `/usr/local/bin` and the plugins at `/usr/local/lib/dnsctl` if root is used; for local installs the setup will use `$HOME/.conf/dnsctl` and `$GOPATH/bin` will be used.
 
 Usage Goal
 -----
