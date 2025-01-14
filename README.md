@@ -9,14 +9,14 @@ Tool made to ease and simplify DNS records updates from the cli.
   * Very basic Cloudflare and Stdout plugins.
   * Lists all the records from configured Cloudflare providers
 
-TODO (Everything):
-* Add records.
-* Copy between providers.
-  * Exclude non-standard records (Alias, etc)
-* Delete Records.
-* Export to json.
-* Export to Terraform.
-* Add support for different providers (AWS and GCP coming up)
+* TODO (Everything):
+  [] Add records.
+  [] Copy between providers.
+    * Exclude non-standard records (Alias, etc)
+  [] Delete Records.
+  [] Export to json.
+  [] Export to Terraform.
+  [] Add support for different providers (AWS and GCP coming up)
 
 
 Compile
